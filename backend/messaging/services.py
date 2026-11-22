@@ -14,13 +14,23 @@ from .serializers import MessageSerializer
 
 
 def _broadcast(conversation, event, **data):
-    """Envoie l'événement aux deux participants (groupe WebSocket `user_<id>`)."""
+    """Diffuse l'événement aux deux participants (groupe WebSocket `user_<id>`).
+
+    L'envoi est différé jusqu'à la validation de la transaction en cours (`on_commit`) : on ne diffuse jamais
+    un événement pour des données finalement annulées, et un client qui réagit à l'événement en rechargeant
+    l'API retrouve déjà le message. Hors transaction, l'envoi part immédiatement."""
     layer = get_channel_layer()
     if layer is None:
         return
-    send = async_to_sync(layer.group_send)
-    for uid in (conversation.starter_id, conversation.recipient_id):
-        send(f"user_{uid}", {"type": "chat.event", "payload": {"event": event, "conversation": conversation.pk, **data}})
+    groups = [f"user_{uid}" for uid in (conversation.starter_id, conversation.recipient_id)]
+    payload = {"event": event, "conversation": conversation.pk, **data}
+
+    def push():
+        send = async_to_sync(layer.group_send)
+        for group in groups:
+            send(group, {"type": "chat.event", "payload": payload})
+
+    transaction.on_commit(push)
 
 
 def _ensure_other_is_active(conversation, sender):

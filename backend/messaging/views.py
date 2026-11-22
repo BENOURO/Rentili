@@ -32,8 +32,7 @@ class ConversationListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         unread = Count("messages", filter=Q(messages__read_at__isnull=True, messages__deleted_at__isnull=True) & ~Q(messages__sender_id=user.pk))
-        return user_conversations(user).annotate(unread=unread)
-
+        return user_conversations(user).annotate(unread=unread).order_by("-updated_at", "-pk")
     def create(self, request, *args, **kwargs):
         data = StartConversationSerializer(data=request.data)
         data.is_valid(raise_exception=True)
