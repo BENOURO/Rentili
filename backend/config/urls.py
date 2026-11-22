@@ -13,4 +13,6 @@ urlpatterns = [
     # Module « Gestion des utilisateurs »
     path('api/auth/', include(auth_urlpatterns)),
     path('api/users/', include(users_urlpatterns)),
+    path('api/messaging/', include('messaging.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

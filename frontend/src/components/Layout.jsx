@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import Avatar from './Avatar'
 import { useToast } from './Toast'
+import { useMessaging } from '../messaging/MessagingContext'
 
 function Logo() {
   return (
@@ -43,6 +44,7 @@ function UserMenu() {
           <div className="menu-head"><b>{user.first_name} {user.last_name}</b><div className="muted small">{user.email}</div></div>
           <hr />
           <Link to="/profil">Mon profil</Link>
+          <Link to="/messages">Messages</Link>
           <Link to="/profil/modifier">Modifier mon profil</Link>
           {user.is_staff && <a href="http://127.0.0.1:8000/admin/">Administration</a>}
           <hr />
@@ -55,6 +57,7 @@ function UserMenu() {
 
 export default function Layout() {
   const { user } = useAuth()
+  const { unread } = useMessaging()
   return (
     <>
       <nav className="nav">
@@ -62,6 +65,7 @@ export default function Layout() {
           <Logo />
           <div className="nav-links">
             <NavLink to="/membres">Membres</NavLink>
+            {user && <NavLink to="/messages">Messages{unread > 0 && <span className="badge">{unread}</span>}</NavLink>}
             {user ? (
               <><NavLink to="/profil" className="hide-sm">Mon profil</NavLink><UserMenu /></>
             ) : (

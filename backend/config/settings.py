@@ -30,8 +30,8 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 
 # Application definition
-
 INSTALLED_APPS = [
+    'daphne',                      # tout en haut, avant django.contrib.*
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'corsheaders',
     # Modules RENTILI
     'users',  # Gestion des utilisateurs — Ghassen Barhoumi
+    'channels',
+    'messaging',
 ]
 
 MIDDLEWARE = [
@@ -153,3 +155,6 @@ SIMPLE_JWT = {
 
 # Front React (Vite) en développement
 CORS_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
+
+ASGI_APPLICATION = 'config.asgi.application'
+CHANNEL_LAYERS = {'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'}}

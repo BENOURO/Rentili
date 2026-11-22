@@ -9,6 +9,7 @@ import MembersPage from './pages/users/MembersPage'
 import ProfilePage from './pages/users/ProfilePage'
 import PublicProfilePage from './pages/users/PublicProfilePage'
 import RegisterPage from './pages/users/RegisterPage'
+import MessagesPage from './pages/messaging/MessagesPage'
 
 const privatePage = (page) => <ProtectedRoute>{page}</ProtectedRoute>
 
@@ -26,6 +27,9 @@ export default function App() {
         <Route path="profil/supprimer" element={privatePage(<DeleteAccountPage />)} />
         <Route path="membres" element={<MembersPage />} />
         <Route path="membres/:id" element={<PublicProfilePage />} />
+        {/* Module « Messagerie » */}
+        <Route path="messages" element={privatePage(<MessagesPage />)} />
+        <Route path="messages/:id" element={privatePage(<MessagesPage />)} />
 
         {/* Les autres modules ajoutent leurs routes ici (annonces, réservations, avis, messagerie). */}
         <Route path="*" element={<Navigate to="/" replace />} />
