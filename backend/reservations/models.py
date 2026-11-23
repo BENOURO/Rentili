@@ -7,27 +7,45 @@ from django.db.models import Q
 
 
 class Annonce(models.Model):
-    """Annonce minimale, le temps que le module « Gestion des annonces » soit intégré.
-
-    Elle ne contient que ce dont les réservations ont besoin (propriétaire, prix, caution).
-    À l'intégration, remplacer la ForeignKey de `Reservation.annonce` par le modèle du module Annonces.
-    """
-
     proprietaire = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="annonces")
     titre = models.CharField(max_length=120)
     description = models.TextField(blank=True)
-    categorie = models.CharField(max_length=60, blank=True)
+    categorie = models.ForeignKey("Categorie", null=True, blank=True, on_delete=models.SET_NULL, related_name="annonces")
     ville = models.CharField(max_length=80, blank=True)
     prix_jour = models.DecimalField("prix par jour (DT)", max_digits=8, decimal_places=2)
     caution = models.DecimalField("caution (DT)", max_digits=8, decimal_places=2, default=Decimal("0"))
     active = models.BooleanField(default=True)
     date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-date_creation"]
 
     def __str__(self):
         return self.titre
+
+
+class Categorie(models.Model):
+    nom = models.CharField(max_length=60, unique=True)
+
+    class Meta:
+        ordering = ["nom"]
+
+    def __str__(self):
+        return self.nom
+
+
+class Photo(models.Model):
+    annonce = models.ForeignKey(Annonce, on_delete=models.CASCADE, related_name="photos")
+    image = models.ImageField(upload_to="annonces/")
+    ordre = models.PositiveIntegerField(default=0)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["ordre", "id"]
+
+    def __str__(self):
+        return f"Photo {self.pk} — {self.annonce.titre}"
 
 
 class Reservation(models.Model):

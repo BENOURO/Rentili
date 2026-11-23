@@ -9,7 +9,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from reservations.models import Annonce, Reservation
+from reservations.models import Annonce, Categorie, Reservation
 from users.models import User
 
 ANNONCES = [
@@ -51,9 +51,11 @@ class Command(BaseCommand):
 
         Reservation.objects.all().delete()
         Annonce.objects.all().delete()
+        Categorie.objects.all().delete()
+        categories = {cat: Categorie.objects.create(nom=cat) for _, _, cat, *_ in ANNONCES}
         annonces = [
             Annonce.objects.create(
-                proprietaire=users[email], titre=titre, categorie=cat, ville=ville,
+                proprietaire=users[email], titre=titre, categorie=categories[cat], ville=ville,
                 prix_jour=Decimal(prix), caution=Decimal(caution), description=desc,
             )
             for email, titre, cat, ville, prix, caution, desc in ANNONCES

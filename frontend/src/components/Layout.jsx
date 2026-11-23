@@ -45,6 +45,7 @@ function UserMenu() {
           <hr />
           <Link to="/profil">Mon profil</Link>
           <Link to="/reservations">Mes réservations</Link>
+          <Link to="/annonces?mine=true">Mes annonces</Link>
           <Link to="/messages">Messages</Link>
           <Link to="/avis">Mes avis</Link>
           <Link to="/profil/modifier">Modifier mon profil</Link>

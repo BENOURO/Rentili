@@ -2,7 +2,7 @@ from datetime import date, timedelta
 
 from rest_framework import serializers
 
-from .models import Annonce, Reservation
+from .models import Annonce, Categorie, Photo, Reservation
 
 DUREE_MAX = 90  # jours
 
@@ -16,12 +16,58 @@ class MembreSerializer(serializers.Serializer):
     city = serializers.CharField()
 
 
+class CategorieSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Categorie
+        fields = ["id", "nom"]
+
+
+class PhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Photo
+        fields = ["id", "image", "ordre"]
+
+
 class AnnonceSerializer(serializers.ModelSerializer):
     proprietaire = MembreSerializer(read_only=True)
+    categorie = CategorieSerializer(read_only=True)
+    categorie_id = serializers.PrimaryKeyRelatedField(
+        source="categorie", queryset=Categorie.objects.all(), required=False, allow_null=True, write_only=True
+    )
+    photos = PhotoSerializer(many=True, read_only=True)
 
     class Meta:
         model = Annonce
-        fields = ["id", "titre", "description", "categorie", "ville", "prix_jour", "caution", "proprietaire"]
+        fields = [
+            "id", "titre", "description", "categorie", "categorie_id", "ville",
+            "prix_jour", "caution", "active", "proprietaire", "photos", "date_creation", "date_modification",
+        ]
+        read_only_fields = ["active", "proprietaire", "date_creation", "date_modification"]
+
+    def validate_titre(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Le titre est obligatoire.")
+        return value.strip()
+
+    def validate_prix_jour(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Le prix par jour doit être positif.")
+        return value
+
+    def validate_caution(self, value):
+        if value < 0:
+            raise serializers.ValidationError("La caution doit être positive.")
+        return value
+
+    def validate(self, attrs):
+        if self.instance is None and not attrs.get("description", "").strip():
+            raise serializers.ValidationError({"description": ["La description est obligatoire."]})
+        if self.instance is None and not attrs.get("ville", "").strip():
+            raise serializers.ValidationError({"ville": ["La ville est obligatoire."]})
+        return attrs
+
+    def create(self, validated_data):
+        return Annonce.objects.create(proprietaire=self.context["request"].user, **validated_data)
 
 
 class AnnonceDetailSerializer(AnnonceSerializer):

@@ -5,7 +5,7 @@ from decimal import Decimal
 import pytest
 from rest_framework.test import APIClient
 
-from reservations.models import Annonce, Reservation
+from reservations.models import Annonce, Categorie, Reservation
 from users.models import User
 
 J = lambda n: date.today() + timedelta(days=n)  # noqa: E731
@@ -222,3 +222,78 @@ def test_annonces_publiques_avec_periodes_reservees(annonce, locataire):
     assert c.get("/api/reservations/annonces/").data["count"] == 1
     d = c.get(f"/api/reservations/annonces/{annonce.pk}/").data
     assert d["periodes_reservees"] == [{"date_debut": J(5), "date_fin": J(8)}]
+
+
+# --- US13 à US18 : gestion complète des annonces ----------------------------------------------
+
+def test_publication_annonce_valide(cl_proprio):
+    categorie = Categorie.objects.create(nom="Outils")
+    r = cl_proprio.post("/api/reservations/annonces/", {
+        "titre": "Pistolet à peinture",
+        "description": "Fourni avec un kit complet.",
+        "categorie_id": categorie.pk,
+        "ville": "Tunis",
+        "prix_jour": "35",
+        "caution": "200",
+    }, format="json")
+    assert r.status_code == 201
+    assert r.data["titre"] == "Pistolet à peinture"
+    assert r.data["categorie"]["nom"] == "Outils"
+
+
+def test_publication_refusee_sans_connexion(db):
+    r = APIClient().post("/api/reservations/annonces/", {"titre": "Objet"}, format="json")
+    assert r.status_code == 401
+
+
+def test_publication_refusee_si_champs_invalides(cl_proprio):
+    r = cl_proprio.post("/api/reservations/annonces/", {
+        "titre": "", "description": "", "ville": "", "prix_jour": "-1", "caution": "-5",
+    }, format="json")
+    assert r.status_code == 400
+
+
+def test_liste_filtres_pagination_et_disponibilite(cl_loc, annonce, locataire):
+    categorie = Categorie.objects.create(nom="Bricolage")
+    annonce.categorie = categorie
+    annonce.ville = "Tunis"
+    annonce.save()
+    r = cl_loc.get("/api/reservations/annonces/?categorie=Tunis")
+    assert r.status_code == 200
+
+    r = cl_loc.get("/api/reservations/annonces/?categorie=Bricolage&ville=Tunis&prix_min=10&prix_max=20")
+    assert r.status_code == 200 and r.data["count"] == 1
+
+    Reservation.objects.create(
+        annonce=annonce, locataire=locataire, date_debut=J(5), date_fin=J(8),
+        statut=S.ACCEPTEE, prix_total=60, caution=100,
+    )
+    r = cl_loc.get(f"/api/reservations/annonces/?date_debut={J(6).isoformat()}&date_fin={J(7).isoformat()}")
+    assert r.status_code == 200 and r.data["count"] == 0
+
+
+def test_detail_ouvert_a_tous(cl_loc, annonce):
+    r = cl_loc.get(f"/api/reservations/annonces/{annonce.pk}/")
+    assert r.status_code == 200
+    assert r.data["description"] == annonce.description
+
+
+def test_seul_le_proprietaire_modifie_l_annonce(cl_proprio, cl_loc, annonce):
+    r = cl_loc.patch(f"/api/reservations/annonces/{annonce.pk}/", {"titre": "Titre tiers"}, format="json")
+    assert r.status_code == 404
+    r = cl_proprio.patch(f"/api/reservations/annonces/{annonce.pk}/", {"titre": "Titre modifié"}, format="json")
+    assert r.status_code == 200
+    assert r.data["titre"] == "Titre modifié"
+
+
+def test_suppression_archive_sans_supprimer_reservations(cl_proprio, cl_loc, annonce, locataire):
+    resa = Reservation.objects.create(
+        annonce=annonce, locataire=locataire, date_debut=J(5), date_fin=J(6),
+        statut=S.EN_ATTENTE, prix_total=30, caution=100,
+    )
+    r = cl_proprio.delete(f"/api/reservations/annonces/{annonce.pk}/")
+    assert r.status_code == 204
+    annonce.refresh_from_db()
+    assert annonce.active is False
+    assert Reservation.objects.filter(pk=resa.pk).exists()
+    assert APIClient().get(f"/api/reservations/annonces/{annonce.pk}/").status_code == 404

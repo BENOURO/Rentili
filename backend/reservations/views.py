@@ -6,24 +6,106 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Annonce, Reservation
-from .serializers import AnnonceDetailSerializer, AnnonceSerializer, RefusSerializer, ReservationSerializer
+from .models import Annonce, Categorie, Photo, Reservation
+from .serializers import (
+    AnnonceDetailSerializer, AnnonceSerializer, CategorieSerializer,
+    RefusSerializer, ReservationSerializer,
+)
 
 S = Reservation.Statut
 
 
-# --- Annonces (lecture seule, en attendant le module Annonces) ---------------------------------
+# --- Annonces (gestion complète) --------------------------------------------------------------
 
-class AnnonceListView(generics.ListAPIView):
+class CategorieListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
+    queryset = Categorie.objects.all()
+    serializer_class = CategorieSerializer
+    pagination_class = None
+
+
+class AnnonceListCreateView(generics.ListCreateAPIView):
     serializer_class = AnnonceSerializer
-    queryset = Annonce.objects.filter(active=True).select_related("proprietaire")
+
+    def get_permissions(self):
+        return [permissions.IsAuthenticated()] if self.request.method == "POST" else [permissions.AllowAny()]
+
+    def get_queryset(self):
+        params = self.request.query_params
+        if params.get("mine") == "true" and self.request.user.is_authenticated:
+            qs = Annonce.objects.filter(proprietaire=self.request.user)
+        else:
+            qs = Annonce.objects.filter(active=True)
+        qs = qs.select_related("proprietaire", "categorie").prefetch_related("photos")
+        recherche = params.get("search") or params.get("q")
+        if recherche:
+            qs = qs.filter(Q(titre__icontains=recherche) | Q(description__icontains=recherche))
+        categorie = params.get("categorie")
+        if categorie:
+            if categorie.isdigit():
+                qs = qs.filter(categorie_id=int(categorie))
+            else:
+                qs = qs.filter(categorie__nom__iexact=categorie)
+        ville = params.get("ville")
+        if ville:
+            qs = qs.filter(ville__icontains=ville)
+        prix_min = params.get("prix_min")
+        prix_max = params.get("prix_max")
+        if prix_min:
+            qs = qs.filter(prix_jour__gte=prix_min)
+        if prix_max:
+            qs = qs.filter(prix_jour__lte=prix_max)
+        debut, fin = params.get("date_debut"), params.get("date_fin")
+        if debut and fin:
+            qs = qs.exclude(
+                reservations__statut=Reservation.Statut.ACCEPTEE,
+                reservations__date_debut__lte=fin,
+                reservations__date_fin__gte=debut,
+            ).distinct()
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        annonce = serializer.save()
+        for ordre, image in enumerate(request.FILES.getlist("photos")):
+            Photo.objects.create(annonce=annonce, image=image, ordre=ordre)
+        data = AnnonceDetailSerializer(annonce, context={"request": request}).data
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
-class AnnonceDetailView(generics.RetrieveAPIView):
-    permission_classes = [permissions.AllowAny]
+class AnnonceDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = AnnonceDetailSerializer
-    queryset = Annonce.objects.filter(active=True).select_related("proprietaire")
+
+    def get_permissions(self):
+        return [permissions.AllowAny()] if self.request.method in ("GET", "HEAD", "OPTIONS") else [permissions.IsAuthenticated()]
+
+    def get_queryset(self):
+        qs = Annonce.objects.select_related("proprietaire", "categorie").prefetch_related("photos")
+        if self.request.method in ("PATCH", "PUT", "DELETE"):
+            return qs.filter(proprietaire=self.request.user)
+        return qs.filter(active=True)
+
+    def update(self, request, *args, **kwargs):
+        annonce = self.get_object()
+        if annonce.proprietaire_id != request.user.pk:
+            raise PermissionDenied("Seul le propriétaire peut modifier cette annonce.")
+        response = super().update(request, *args, partial=kwargs.pop("partial", True))
+        photos = request.FILES.getlist("photos")
+        if photos:
+            annonce.photos.all().delete()
+            for ordre, image in enumerate(photos):
+                Photo.objects.create(annonce=annonce, image=image, ordre=ordre)
+        annonce.refresh_from_db()
+        return Response(AnnonceDetailSerializer(annonce, context={"request": request}).data)
+
+    def destroy(self, request, *args, **kwargs):
+        annonce = self.get_object()
+        if annonce.proprietaire_id != request.user.pk:
+            raise PermissionDenied("Seul le propriétaire peut supprimer cette annonce.")
+        annonce.active = False
+        annonce.save(update_fields=["active", "date_modification"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # --- Réservations ------------------------------------------------------------------------------
