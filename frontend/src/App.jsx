@@ -38,7 +38,7 @@ export default function App() {
         <Route path="messages/:id" element={privatePage(<MessagesPage />)} />
         {/* Module « Gestion des avis » */}
         <Route path="avis" element={<AvisPage />} />
-        {/* Module « Gestion des réservations » (annonces minimales en attendant le module Annonces) */}
+        {/* Modules « Gestion des annonces » et « Gestion des réservations » */}
         <Route path="annonces" element={<AnnoncesPage />} />
         <Route path="annonces/publier" element={privatePage(<AnnonceFormPage />)} />
         <Route path="annonces/:id/modifier" element={privatePage(<AnnonceFormPage mode="edit" />)} />

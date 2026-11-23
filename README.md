@@ -16,7 +16,7 @@ pip install -r requirements.txt
 python manage.py migrate
 python manage.py seed_demo          # comptes de démonstration (mot de passe : rentili2026)
 python manage.py seed_reservations  # objets et réservations de démonstration (après seed_demo)
-python manage.py runserver 8001     # http://127.0.0.1:8001 (port attendu par frontend/vite.config.js)
+python manage.py runserver          # http://127.0.0.1:8000 (port attendu par frontend/vite.config.js)
 ```
 
 **Frontend** (terminal 2) :
@@ -27,7 +27,7 @@ npm run dev                       # http://localhost:5173
 ```
 En développement, Vite transmet les appels `/api/...` au backend (voir `frontend/vite.config.js`).
 
-Comptes de démo : `yasmine@rentili.tn`, `karim@rentili.tn` (membres), `admin@rentili.tn` (admin → http://127.0.0.1:8001/admin).
+Comptes de démo : `yasmine@rentili.tn`, `karim@rentili.tn` (membres), `admin@rentili.tn` (admin → http://127.0.0.1:8000/admin).
 Tests du backend : `cd backend && pytest`.
 
 ## Organisation
@@ -35,9 +35,9 @@ Tests du backend : `cd backend && pytest`.
 | Module | Backend (app Django) | Frontend | Responsable |
 |---|---|---|---|
 | Gestion des utilisateurs | `backend/users/` | `frontend/src/pages/users/` | Ghassen Barhoumi |
-| Gestion des annonces | `backend/listings/` | `frontend/src/pages/listings/` | Youssef Marzouki |
+| Gestion des annonces | `backend/reservations/` (modèles `Annonce`, `Categorie`, `Photo`) | `frontend/src/pages/reservations/` (`Annonces*`, `AnnonceFormPage`) | Youssef Marzouki |
 | Gestion des réservations | `backend/reservations/` | `frontend/src/pages/reservations/` | Ghassen Barhoumi |
-| Avis & administration | `backend/reviews/` | `frontend/src/pages/reviews/` | Amine Bennour |
+| Avis & administration | `backend/GestionDesAvis/` | `frontend/src/pages/AvisPage.jsx`, `frontend/src/components/reviews/` | Amine Bennour |
 | Messagerie & communication | `backend/messaging/` | `frontend/src/pages/messaging/` | Eya Raddaoui |
 
 Règles communes :
@@ -82,9 +82,9 @@ limitation des tentatives de connexion.
 
 ## API du module « Gestion des réservations » (Sprint 1)
 
-En attendant le module Annonces, l'app `reservations` contient un modèle `Annonce` minimal
-(propriétaire, titre, prix par jour, caution, ville) : à l'intégration, `Reservation.annonce`
-pointera vers le modèle du module Annonces.
+Les réservations portent sur les annonces du module « Gestion des annonces » (modèles `Annonce`,
+`Categorie` et `Photo`, dans la même app `reservations`) : `Reservation.annonce` est une clé étrangère
+vers `Annonce`, et le propriétaire d'une réservation est `annonce.proprietaire`.
 
 | Méthode | Route | Rôle | US |
 |---|---|---|---|
@@ -96,8 +96,17 @@ pointera vers le modèle du module Annonces.
 | POST | `/api/reservations/<id>/annuler/` | annuler une demande en attente ou une réservation pas encore commencée | US24 |
 | PATCH | `/api/reservations/<id>/` | le locataire modifie les dates d'une demande en attente (prix recalculé) | US25 |
 | POST | `/api/reservations/<id>/terminer/` | le propriétaire clôt une location commencée | US26 |
-| GET | `/api/reservations/annonces/`, `/annonces/<id>/` | objets à louer (public), avec les périodes déjà réservées | — |
 
 Statuts : `EN_ATTENTE` → `ACCEPTEE` → `TERMINEE`, ou `REFUSEE` / `ANNULEE`.
 Quand un compte est supprimé (signal `user_deleted`), ses demandes en attente et ses réservations à venir sont annulées.
 
+## API du module « Gestion des annonces » (Sprint 1)
+
+| Méthode | Route | Rôle |
+|---|---|---|
+| GET | `/api/reservations/annonces/` | liste publique des annonces actives ; filtres `search`, `categorie`, `ville`, `prix_min`, `prix_max`, `date_debut` + `date_fin` (objets libres sur la période), `mine=true` (mes annonces) |
+| POST | `/api/reservations/annonces/` | publier une annonce (connecté), photos en multipart |
+| GET | `/api/reservations/annonces/<id>/` | détail public, avec les périodes déjà réservées |
+| PATCH | `/api/reservations/annonces/<id>/` | modifier son annonce (propriétaire seulement) |
+| DELETE | `/api/reservations/annonces/<id>/` | retirer son annonce (désactivée, pas effacée) : ses demandes en attente et réservations à venir sont annulées |
+| GET | `/api/reservations/annonces/categories/` | liste des catégories |
