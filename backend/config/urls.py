@@ -14,5 +14,6 @@ urlpatterns = [
     path('api/auth/', include(auth_urlpatterns)),
     path('api/users/', include(users_urlpatterns)),
     path('api/messaging/', include('messaging.urls')),
+    path('api/avis/', include('GestionDesAvis.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

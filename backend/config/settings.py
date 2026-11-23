@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'users',  # Gestion des utilisateurs — Ghassen Barhoumi
     'channels',
     'messaging',
+    'GestionDesAvis',
 ]
 
 MIDDLEWARE = [
