@@ -1,7 +1,8 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Avis
@@ -13,11 +14,13 @@ from .serializers import AvisSerializer
 def avis_collection(request):
     if request.method == "GET":
         return lister_avis(request)
+    if not request.user or not request.user.is_authenticated:
+        raise PermissionDenied("Authentification requise")
     return creer_avis(request)
 
 
 @api_view(["GET", "PUT", "PATCH", "DELETE"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def avis_detail(request, pk):
     if request.method == "GET":
         return consulter_avis(request, pk)
@@ -32,7 +35,9 @@ def lister_avis(request):
 
 
 def creer_avis(request):
-    serializer = AvisSerializer(data=request.data)
+    data = request.data.copy()
+    data["utilisateur_id"] = request.user.pk
+    serializer = AvisSerializer(data=data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -46,9 +51,13 @@ def consulter_avis(request, pk):
 
 def modifier_avis(request, pk):
     avis = get_object_or_404(Avis, pk=pk)
+    if avis.utilisateur_id != request.user.pk:
+        raise PermissionDenied("Vous ne pouvez modifier que vos propres avis")
+    data = request.data.copy()
+    data["utilisateur_id"] = avis.utilisateur_id
     serializer = AvisSerializer(
         avis,
-        data=request.data,
+        data=data,
         partial=request.method == "PATCH",
     )
     if serializer.is_valid():
@@ -59,5 +68,7 @@ def modifier_avis(request, pk):
 
 def supprimer_avis(request, pk):
     avis = get_object_or_404(Avis, pk=pk)
+    if avis.utilisateur_id != request.user.pk:
+        raise PermissionDenied("Vous ne pouvez supprimer que vos propres avis")
     avis.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)

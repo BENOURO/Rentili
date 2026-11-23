@@ -1,3 +1,4 @@
+import { api } from '../api/client'
 import { announcements, users } from '../data/catalog'
 
 function mapAvis(avis) {
@@ -29,26 +30,13 @@ export async function getAvis() {
 }
 
 export async function createAvis(payload) {
-  const response = await fetch('/api/avis/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-  if (!response.ok) throw new Error(JSON.stringify(await response.json()))
-  return response.json()
+  return api('/avis/', { method: 'POST', body: payload })
 }
 
 export async function updateAvis(id, payload) {
-  const response = await fetch(`/api/avis/${id}/`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-  if (!response.ok) throw new Error(JSON.stringify(await response.json()))
-  return response.json()
+  return api(`/avis/${id}/`, { method: 'PATCH', body: payload })
 }
 
 export async function deleteAvis(id) {
-  const response = await fetch(`/api/avis/${id}/`, { method: 'DELETE' })
-  if (!response.ok) throw new Error('Impossible de supprimer cet avis')
+  return api(`/avis/${id}/`, { method: 'DELETE' })
 }

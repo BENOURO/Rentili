@@ -5,8 +5,11 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   server: {
+    // En développement, le front appelle /api/... : Vite transmet au backend Django (pas de souci de CORS).
     proxy: {
+      '/ws': { target: 'ws://127.0.0.1:8001', ws: true },
       '/api': 'http://127.0.0.1:8001',
+      '/media': 'http://127.0.0.1:8001',
     },
   },
 })

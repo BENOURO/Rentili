@@ -1,4 +1,4 @@
-import { announcements, users } from '../../data/catalog'
+import { announcements } from '../../data/catalog'
 import StarRating from './StarRating'
 
 export default function ReviewForm({ editingId, form, onChange, onSubmit, onReset }) {
@@ -21,20 +21,6 @@ export default function ReviewForm({ editingId, form, onChange, onSubmit, onRese
                 >
                   {announcements.map((announcement) => (
                     <option key={announcement.id} value={announcement.id}>{announcement.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="utilisateur">Utilisateur <span className="req">*</span></label>
-                <select
-                  id="utilisateur"
-                  className="input"
-                  value={form.utilisateur_id}
-                  onChange={(event) => onChange({ ...form, utilisateur_id: event.target.value })}
-                  required
-                >
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>{user.name}</option>
                   ))}
                 </select>
               </div>

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import Footer from '../components/layout/Footer'
-import Navbar from '../components/layout/Navbar'
 import ReviewCard from '../components/reviews/ReviewCard'
 import ReviewForm from '../components/reviews/ReviewForm'
 import ReviewHero from '../components/reviews/ReviewHero'
 import ReviewToolbar from '../components/reviews/ReviewToolbar'
+import { useAuth } from '../auth/AuthContext'
 import { createAvis, deleteAvis, getAvis, updateAvis } from '../services/avisService'
 
 const emptyForm = {
@@ -16,12 +15,16 @@ const emptyForm = {
 }
 
 export default function AvisPage() {
+  const { user } = useAuth()
   const [reviews, setReviews] = useState([])
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [editingId, setEditingId] = useState(null)
   const [error, setError] = useState('')
-  const [form, setForm] = useState(emptyForm)
+  const [form, setForm] = useState({
+    ...emptyForm,
+    utilisateur_id: user?.id ?? emptyForm.utilisateur_id,
+  })
 
   const listerAvis = useCallback(async () => {
     try {
@@ -52,7 +55,10 @@ export default function AvisPage() {
 
   function resetForm() {
     setEditingId(null)
-    setForm(emptyForm)
+    setForm({
+      ...emptyForm,
+      utilisateur_id: user?.id ?? emptyForm.utilisateur_id,
+    })
   }
 
   async function handleSubmit(event) {
@@ -103,15 +109,13 @@ export default function AvisPage() {
 
   return (
     <>
-      <Navbar />
-      <main>
-        <ReviewHero
-          reviewCount={reviews.length}
-          average={average}
-          positiveCount={reviews.filter((review) => review.rating >= 4).length}
-        />
+      <ReviewHero
+        reviewCount={reviews.length}
+        average={average}
+        positiveCount={reviews.filter((review) => review.rating >= 4).length}
+      />
 
-        <section className="page" id="avis">
+      <section className="page" id="avis">
           <div className="wrap">
             <div className="page-head">
               <div>
@@ -142,6 +146,7 @@ export default function AvisPage() {
                   <ReviewCard
                     key={review.id}
                     review={review}
+                    canManage={Boolean(user && review.utilisateur_id === user.id)}
                     onEdit={editReview}
                     onDelete={deleteReview}
                   />
@@ -156,15 +161,13 @@ export default function AvisPage() {
           </div>
         </section>
 
-        <ReviewForm
-          editingId={editingId}
-          form={form}
-          onChange={setForm}
-          onSubmit={handleSubmit}
-          onReset={resetForm}
-        />
-      </main>
-      <Footer />
+      <ReviewForm
+        editingId={editingId}
+        form={form}
+        onChange={setForm}
+        onSubmit={handleSubmit}
+        onReset={resetForm}
+      />
     </>
   )
 }

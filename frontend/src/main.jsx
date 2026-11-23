@@ -3,11 +3,20 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
+import { AuthProvider } from './auth/AuthContext.jsx'
+import { ToastProvider } from './components/Toast.jsx'
+import { MessagingProvider } from './messaging/MessagingContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <ToastProvider>
+        <AuthProvider>
+          <MessagingProvider>
+            <App />
+          </MessagingProvider>
+        </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   </StrictMode>,
 )

@@ -1,6 +1,6 @@
 import StarRating from './StarRating'
 
-export default function ReviewCard({ review, onEdit, onDelete }) {
+export default function ReviewCard({ review, canManage, onEdit, onDelete }) {
   const initials = review.owner.split(' ').map((name) => name[0]).join('').slice(0, 2)
 
   return (
@@ -16,10 +16,12 @@ export default function ReviewCard({ review, onEdit, onDelete }) {
       <p className="pre review-comment">{review.comment}</p>
       <div className="review-card-foot">
         <span className="small muted">{review.date}</span>
-        <div className="row">
-          <button className="btn ghost sm" type="button" onClick={() => onEdit(review)}>Modifier</button>
-          <button className="btn danger sm" type="button" onClick={() => onDelete(review.id)}>Supprimer</button>
-        </div>
+        {canManage && (
+          <div className="row">
+            <button className="btn ghost sm" type="button" onClick={() => onEdit(review)}>Modifier</button>
+            <button className="btn danger sm" type="button" onClick={() => onDelete(review.id)}>Supprimer</button>
+          </div>
+        )}
       </div>
     </article>
   )
