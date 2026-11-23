@@ -1,0 +1,46 @@
+/* Module « Gestion des réservations » — réutilise les classes communes (.card, .btn, .field…) */
+.annonce-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.annonce-card { display: flex; flex-direction: column; gap: 6px; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+.annonce-card:hover { border-color: var(--terra); box-shadow: var(--shadow); }
+.annonce-card h3 { margin: 4px 0 0; }
+.annonce-card .prix { margin-top: auto; padding-top: 10px; font-weight: 700; }
+.tag { display: inline-block; align-self: flex-start; background: var(--sand-2); color: var(--ink-2); border-radius: 99px; padding: 2px 10px; font-size: .78rem; font-weight: 600; }
+
+.annonce-layout { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
+@media (max-width: 860px) { .annonce-layout { grid-template-columns: 1fr; } }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+.fact { background: var(--sand); border-radius: 10px; padding: 10px 12px; }
+.fact b { display: block; font-size: 1.1rem; }
+.recap { background: var(--sand); border-radius: 10px; padding: 12px 14px; margin: 6px 0 16px; font-size: .92rem; }
+.recap .row { justify-content: space-between; }
+.recap .total { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 8px; font-weight: 700; }
+.periodes { list-style: none; padding: 0; margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.periodes li { background: var(--red-soft); color: var(--red); border-radius: 8px; padding: 3px 9px; font-size: .82rem; }
+
+.tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 18px; flex-wrap: wrap; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; font: 600 .95rem var(--sans); color: var(--muted); cursor: pointer; }
+.tabs button.on { color: var(--ink); border-bottom-color: var(--terra); }
+.filtres { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.filtres button { border: 1px solid var(--line); background: var(--card); border-radius: 99px; padding: 4px 12px; font: 500 .85rem var(--sans); cursor: pointer; }
+.filtres button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+.resa-list { display: grid; gap: 12px; }
+.resa { display: grid; gap: 10px; }
+.resa-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; flex-wrap: wrap; }
+.resa-head h3 { margin: 0; }
+.resa-meta { display: flex; gap: 18px; flex-wrap: wrap; font-size: .9rem; color: var(--ink-2); }
+.resa-note { background: var(--sand); border-radius: 10px; padding: 8px 12px; font-size: .9rem; }
+.resa-note.refus { background: var(--red-soft); color: var(--red); }
+.resa-actions { display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 12px; }
+.resa-form { display: grid; gap: 10px; background: var(--sand); border-radius: 10px; padding: 12px; }
+.resa-form .field { margin: 0; }
+
+.statut { display: inline-block; border-radius: 99px; padding: 3px 11px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+.st-attente { background: var(--amber-soft); color: var(--amber); }
+.st-acceptee { background: #e3efdc; color: var(--olive); }
+.st-refusee { background: var(--red-soft); color: var(--red); }
+.st-annulee { background: var(--sand-2); color: var(--muted); }
+.st-terminee { background: #e2e6f0; color: var(--ink-2); }
+/* champs date : ne pas déborder de la carte */
+.annonce-layout .grid-2 > *, .resa-form .grid-2 > * { min-width: 0; }
+input[type="date"].input { width: 100%; min-width: 0; }

@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'channels',
     'messaging',
     'GestionDesAvis',
+    'reservations',
 ]
 
 MIDDLEWARE = [

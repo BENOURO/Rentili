@@ -14,8 +14,9 @@ python -m venv venv
 # Windows : venv\Scripts\activate      macOS / Linux : source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py seed_demo        # comptes de démonstration (mot de passe : rentili2026)
-python manage.py runserver        # http://127.0.0.1:8000
+python manage.py seed_demo          # comptes de démonstration (mot de passe : rentili2026)
+python manage.py seed_reservations  # objets et réservations de démonstration (après seed_demo)
+python manage.py runserver 8001     # http://127.0.0.1:8001 (port attendu par frontend/vite.config.js)
 ```
 
 **Frontend** (terminal 2) :
@@ -26,7 +27,7 @@ npm run dev                       # http://localhost:5173
 ```
 En développement, Vite transmet les appels `/api/...` au backend (voir `frontend/vite.config.js`).
 
-Comptes de démo : `yasmine@rentili.tn`, `karim@rentili.tn` (membres), `admin@rentili.tn` (admin → http://127.0.0.1:8000/admin).
+Comptes de démo : `yasmine@rentili.tn`, `karim@rentili.tn` (membres), `admin@rentili.tn` (admin → http://127.0.0.1:8001/admin).
 Tests du backend : `cd backend && pytest`.
 
 ## Organisation
@@ -35,7 +36,7 @@ Tests du backend : `cd backend && pytest`.
 |---|---|---|---|
 | Gestion des utilisateurs | `backend/users/` | `frontend/src/pages/users/` | Ghassen Barhoumi |
 | Gestion des annonces | `backend/listings/` | `frontend/src/pages/listings/` | Youssef Marzouki |
-| Gestion des réservations | `backend/bookings/` | `frontend/src/pages/bookings/` | Ghayth Ben Othmen |
+| Gestion des réservations | `backend/reservations/` | `frontend/src/pages/reservations/` | Ghassen Barhoumi |
 | Avis & administration | `backend/reviews/` | `frontend/src/pages/reviews/` | Amine Bennour |
 | Messagerie & communication | `backend/messaging/` | `frontend/src/pages/messaging/` | Eya Raddaoui |
 
@@ -78,3 +79,25 @@ def archiver_annonces(sender, user, **kwargs):
 Prévu au sprint « authentification intelligente » : vérification de l'adresse email, réinitialisation et changement
 du mot de passe, gestion des rôles, connexion Google (OAuth), révocation des jetons à la déconnexion,
 limitation des tentatives de connexion.
+
+## API du module « Gestion des réservations » (Sprint 1)
+
+En attendant le module Annonces, l'app `reservations` contient un modèle `Annonce` minimal
+(propriétaire, titre, prix par jour, caution, ville) : à l'intégration, `Reservation.annonce`
+pointera vers le modèle du module Annonces.
+
+| Méthode | Route | Rôle | US |
+|---|---|---|---|
+| POST | `/api/reservations/` | demander une réservation `{annonce_id, date_debut, date_fin, message}` : prix calculé, chevauchements refusés | US21 |
+| POST | `/api/reservations/<id>/accepter/` | le propriétaire accepte (les demandes concurrentes sont refusées) | US22 |
+| POST | `/api/reservations/<id>/refuser/` | le propriétaire refuse `{motif}` | US22 |
+| GET | `/api/reservations/?role=locataire\|proprietaire&statut=…` | mes réservations envoyées / reçues | US23 |
+| GET | `/api/reservations/<id>/` | détail (locataire ou propriétaire seulement) | US23 |
+| POST | `/api/reservations/<id>/annuler/` | annuler une demande en attente ou une réservation pas encore commencée | US24 |
+| PATCH | `/api/reservations/<id>/` | le locataire modifie les dates d'une demande en attente (prix recalculé) | US25 |
+| POST | `/api/reservations/<id>/terminer/` | le propriétaire clôt une location commencée | US26 |
+| GET | `/api/reservations/annonces/`, `/annonces/<id>/` | objets à louer (public), avec les périodes déjà réservées | — |
+
+Statuts : `EN_ATTENTE` → `ACCEPTEE` → `TERMINEE`, ou `REFUSEE` / `ANNULEE`.
+Quand un compte est supprimé (signal `user_deleted`), ses demandes en attente et ses réservations à venir sont annulées.
+

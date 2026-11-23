@@ -15,4 +15,6 @@ urlpatterns = [
     path('api/users/', include(users_urlpatterns)),
     path('api/messaging/', include('messaging.urls')),
     path('api/avis/', include('GestionDesAvis.urls')),
+    # Module « Gestion des réservations »
+    path('api/reservations/', include('reservations.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

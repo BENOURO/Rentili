@@ -11,6 +11,9 @@ import PublicProfilePage from './pages/users/PublicProfilePage'
 import RegisterPage from './pages/users/RegisterPage'
 import MessagesPage from './pages/messaging/MessagesPage'
 import AvisPage from './pages/AvisPage'
+import AnnoncePage from './pages/reservations/AnnoncePage'
+import AnnoncesPage from './pages/reservations/AnnoncesPage'
+import MesReservationsPage from './pages/reservations/MesReservationsPage'
 import './App.css'
 
 const privatePage = (page) => <ProtectedRoute>{page}</ProtectedRoute>
@@ -34,6 +37,10 @@ export default function App() {
         <Route path="messages/:id" element={privatePage(<MessagesPage />)} />
         {/* Module « Gestion des avis » */}
         <Route path="avis" element={<AvisPage />} />
+        {/* Module « Gestion des réservations » (annonces minimales en attendant le module Annonces) */}
+        <Route path="annonces" element={<AnnoncesPage />} />
+        <Route path="annonces/:id" element={<AnnoncePage />} />
+        <Route path="reservations" element={privatePage(<MesReservationsPage />)} />
 
         {/* Les autres modules ajoutent leurs routes ici (annonces, réservations, avis, messagerie). */}
         <Route path="*" element={<Navigate to="/" replace />} />

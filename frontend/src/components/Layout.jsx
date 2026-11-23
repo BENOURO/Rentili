@@ -44,6 +44,7 @@ function UserMenu() {
           <div className="menu-head"><b>{user.first_name} {user.last_name}</b><div className="muted small">{user.email}</div></div>
           <hr />
           <Link to="/profil">Mon profil</Link>
+          <Link to="/reservations">Mes réservations</Link>
           <Link to="/messages">Messages</Link>
           <Link to="/avis">Mes avis</Link>
           <Link to="/profil/modifier">Modifier mon profil</Link>
@@ -65,6 +66,8 @@ export default function Layout() {
         <div className="wrap">
           <Logo />
           <div className="nav-links">
+            <NavLink to="/annonces">Objets</NavLink>
+            {user && <NavLink to="/reservations">Réservations</NavLink>}
             {user && <NavLink to="/membres">Membres</NavLink>}
             {user && <NavLink to="/avis">Avis</NavLink>}
             {user && <NavLink to="/messages">Messages{unread > 0 && <span className="badge">{unread}</span>}</NavLink>}
