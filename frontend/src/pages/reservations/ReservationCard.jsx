@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../api/client'
 import Field from '../../components/Field'
@@ -15,8 +15,25 @@ export default function ReservationCard({ resa, onChange }) {
   const [dates, setDates] = useState({ date_debut: resa.date_debut, date_fin: resa.date_fin })
   const [errors, setErrors] = useState({})
   const [busy, setBusy] = useState(false)
+  const [avisStats, setAvisStats] = useState(null)
   const a = resa.actions
   const proprio = resa.role === 'proprietaire'
+
+  useEffect(() => {
+    if (resa.statut !== 'TERMINEE') return
+    api('/avis/')
+      .then((avis) => {
+        const selected = Array.isArray(avis)
+          ? avis.filter((item) => item.annonce_id === resa.annonce.id)
+          : []
+        const count = selected.length
+        const average = count
+          ? selected.reduce((total, item) => total + item.note, 0) / count
+          : null
+        setAvisStats({ count, average })
+      })
+      .catch(() => setAvisStats({ count: 0, average: null }))
+  }, [resa.statut, resa.annonce.id])
 
   async function run(path, { body, method = 'POST', ok }) {
     setBusy(true); setErrors({})
@@ -53,7 +70,39 @@ export default function ReservationCard({ resa, onChange }) {
 
       {resa.message && <div className="resa-note">« {resa.message} »</div>}
       {resa.statut === 'REFUSEE' && resa.motif_refus && <div className="resa-note refus">Motif du refus : {resa.motif_refus}</div>}
-      {resa.statut === 'TERMINEE' && !proprio && <div className="resa-note">Location terminée. <Link to="/avis">Donner mon avis</Link></div>}
+      {resa.statut === 'TERMINEE' && !proprio && (
+        <div className="resa-note">
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <span>Location terminée.</span>
+            {avisStats && (
+              <span className="small" aria-label={`Note moyenne ${avisStats.average ?? 0} sur 5`}>
+                <span style={{ color: '#e0a12a', letterSpacing: 1 }}>
+                  {'★'.repeat(Math.round(avisStats.average || 0))}
+                  {'☆'.repeat(5 - Math.round(avisStats.average || 0))}
+                </span>
+                {' '}
+                <b>{avisStats.average ? avisStats.average.toFixed(1) : '0.0'}/5</b>
+                {' · '}
+                {avisStats.count} avis
+              </span>
+            )}
+          </div>
+          <div className="row" style={{ marginTop: 8 }}>
+            <Link
+              className="btn sm"
+              to={`/avis?reservation=${resa.id}&annonce=${resa.annonce.id}`}
+            >
+              Donner mon avis
+            </Link>
+            <Link
+              className="btn ghost sm"
+              to={`/avis?annonce=${resa.annonce.id}`}
+            >
+              Voir les avis
+            </Link>
+          </div>
+        </div>
+      )}
       {erreurGlobale && <div className="alert" style={{ margin: 0 }}>{erreurGlobale}</div>}
 
       {mode === 'refuser' && (

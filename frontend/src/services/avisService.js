@@ -1,17 +1,13 @@
 import { api } from '../api/client'
-import { announcements, users } from '../data/catalog'
 
 function mapAvis(avis) {
-  const utilisateur = users.find((user) => user.id === avis.utilisateur_id)
-  const annonce = announcements.find((item) => item.id === avis.annonce_id)
-
   return {
     id: avis.idAvis,
     utilisateur_id: avis.utilisateur_id,
     annonce_id: avis.annonce_id,
     reservation_id: avis.reservation_id,
-    item: annonce?.name ?? `Annonce ${avis.annonce_id}`,
-    owner: utilisateur?.name ?? `Utilisateur ${avis.utilisateur_id}`,
+    item: avis.annonce_titre ?? `Annonce ${avis.annonce_id}`,
+    owner: avis.proprietaire_name ?? `Propriétaire ${avis.annonce_id}`,
     rating: avis.note,
     comment: avis.commentaire,
     date: new Intl.DateTimeFormat('fr-FR', {
@@ -27,6 +23,10 @@ export async function getAvis() {
   if (!response.ok) throw new Error('Impossible de charger les avis')
   const data = await response.json()
   return data.map(mapAvis)
+}
+
+export async function getEligibleAvis() {
+  return api('/avis/eligible/')
 }
 
 export async function createAvis(payload) {

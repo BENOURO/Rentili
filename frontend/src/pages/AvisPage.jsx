@@ -1,26 +1,35 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import ReviewCard from '../components/reviews/ReviewCard'
 import ReviewForm from '../components/reviews/ReviewForm'
 import ReviewHero from '../components/reviews/ReviewHero'
 import ReviewToolbar from '../components/reviews/ReviewToolbar'
 import { useAuth } from '../auth/AuthContext'
-import { createAvis, deleteAvis, getAvis, updateAvis } from '../services/avisService'
+import {
+  createAvis,
+  deleteAvis,
+  getAvis,
+  getEligibleAvis,
+  updateAvis,
+} from '../services/avisService'
 
 const emptyForm = {
   utilisateur_id: 1,
-  annonce_id: 1,
-  reservation_id: 1,
+  annonce_id: '',
+  reservation_id: '',
   rating: 5,
   comment: '',
 }
 
 export default function AvisPage() {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [reviews, setReviews] = useState([])
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [editingId, setEditingId] = useState(null)
   const [error, setError] = useState('')
+  const [eligibleReservations, setEligibleReservations] = useState([])
   const [form, setForm] = useState({
     ...emptyForm,
     utilisateur_id: user?.id ?? emptyForm.utilisateur_id,
@@ -38,7 +47,39 @@ export default function AvisPage() {
     Promise.resolve().then(listerAvis)
   }, [listerAvis])
 
-  const visibleReviews = useMemo(() => reviews.filter((review) => {
+  useEffect(() => {
+    if (!user) {
+      setEligibleReservations([])
+      return
+    }
+    getEligibleAvis()
+      .then((eligible) => {
+        setEligibleReservations(eligible)
+        const reservationId = Number(searchParams.get('reservation'))
+        const annonceId = Number(searchParams.get('annonce'))
+        if (reservationId && eligible.some((item) => item.reservation_id === reservationId)) {
+          setForm((current) => ({
+            ...current,
+            reservation_id: String(reservationId),
+            annonce_id: annonceId || current.annonce_id,
+            utilisateur_id: user.id,
+          }))
+          window.requestAnimationFrame(() => {
+            document.querySelector('#ajouter')?.scrollIntoView({ behavior: 'smooth' })
+          })
+        }
+      })
+      .catch(() => setEligibleReservations([]))
+  }, [user, searchParams])
+
+  const objectReviews = useMemo(() => {
+    const selectedAnnonceId = Number(searchParams.get('annonce'))
+    return selectedAnnonceId
+      ? reviews.filter((review) => review.annonce_id === selectedAnnonceId)
+      : reviews
+  }, [reviews, searchParams])
+
+  const visibleReviews = useMemo(() => objectReviews.filter((review) => {
     const matchesSearch = `${review.item} ${review.owner} ${review.comment}`
       .toLowerCase()
       .includes(search.toLowerCase())
@@ -47,10 +88,10 @@ export default function AvisPage() {
       (filter === 'positive' && review.rating >= 4) ||
       (filter === 'low' && review.rating <= 3)
     return matchesSearch && matchesFilter
-  }), [reviews, search, filter])
+  }), [objectReviews, search, filter])
 
-  const average = reviews.length
-    ? (reviews.reduce((total, review) => total + review.rating, 0) / reviews.length).toFixed(1)
+  const average = objectReviews.length
+    ? (objectReviews.reduce((total, review) => total + review.rating, 0) / objectReviews.length).toFixed(1)
     : '0.0'
 
   function resetForm() {
@@ -93,7 +134,10 @@ export default function AvisPage() {
       rating: review.rating,
       comment: review.comment,
     })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.requestAnimationFrame(() => {
+      document.querySelector('#ajouter')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      window.setTimeout(() => document.querySelector('#comment')?.focus(), 350)
+    })
   }
 
   async function deleteReview(id) {
@@ -110,9 +154,9 @@ export default function AvisPage() {
   return (
     <>
       <ReviewHero
-        reviewCount={reviews.length}
+        reviewCount={objectReviews.length}
         average={average}
-        positiveCount={reviews.filter((review) => review.rating >= 4).length}
+        positiveCount={objectReviews.filter((review) => review.rating >= 4).length}
       />
 
       <section className="page" id="avis">
@@ -126,6 +170,7 @@ export default function AvisPage() {
                 className="btn"
                 type="button"
                 onClick={() => document.querySelector('#ajouter')?.scrollIntoView({ behavior: 'smooth' })}
+                disabled={!editingId && eligibleReservations.length === 0}
               >
                 + Ajouter un avis
               </button>
@@ -137,6 +182,25 @@ export default function AvisPage() {
               onSearchChange={setSearch}
               onFilterChange={setFilter}
             />
+
+            {searchParams.get('annonce') && (
+              <div className="review-toolbar card">
+                <strong>
+                  Avis pour : {
+                    visibleReviews[0]?.item ??
+                    reviews.find((review) => review.annonce_id === Number(searchParams.get('annonce')))?.item ??
+                    `Objet ${searchParams.get('annonce')}`
+                  }
+                </strong>
+                <button
+                  className="btn ghost sm"
+                  type="button"
+                  onClick={() => setSearchParams({})}
+                >
+                  Voir tous les objets
+                </button>
+              </div>
+            )}
 
             {error && <div className="alert" role="alert">{error}</div>}
 
@@ -164,6 +228,7 @@ export default function AvisPage() {
       <ReviewForm
         editingId={editingId}
         form={form}
+        eligibleReservations={eligibleReservations}
         onChange={setForm}
         onSubmit={handleSubmit}
         onReset={resetForm}
