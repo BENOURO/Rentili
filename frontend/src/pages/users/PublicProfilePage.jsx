@@ -4,7 +4,6 @@ import { api } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import Avatar from '../../components/Avatar'
 import { monthYear } from './format'
-import ContactButton from '../messaging/ContactButton'
 
 /** US05 — Profil public : prénom + initiale, ville, ancienneté, présentation. Jamais l'email ni le téléphone. */
 export default function PublicProfilePage() {
@@ -35,7 +34,6 @@ export default function PublicProfilePage() {
         <h3>Présentation</h3>
         {member.bio ? <p className="pre" style={{ margin: 0 }}>{member.bio}</p> : <p className="muted" style={{ margin: 0 }}>{member.first_name} n'a pas encore écrit de présentation.</p>}
       </div>
-      {!isMe && <div className="card mb"><ContactButton listingId={1} listingTitle="Annonce de test" ownerId={member.id} /></div>}
       <Link className="small muted" to="/avis">Consulter les avis de la communauté</Link>
     </div>
   )
