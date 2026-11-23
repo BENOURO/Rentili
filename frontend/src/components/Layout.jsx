@@ -45,6 +45,7 @@ function UserMenu() {
           <hr />
           <Link to="/profil">Mon profil</Link>
           <Link to="/messages">Messages</Link>
+          <Link to="/avis">Mes avis</Link>
           <Link to="/profil/modifier">Modifier mon profil</Link>
           {user.is_staff && <a href="http://127.0.0.1:8000/admin/">Administration</a>}
           <hr />
@@ -64,7 +65,8 @@ export default function Layout() {
         <div className="wrap">
           <Logo />
           <div className="nav-links">
-            <NavLink to="/membres">Membres</NavLink>
+            {user && <NavLink to="/membres">Membres</NavLink>}
+            {user && <NavLink to="/avis">Avis</NavLink>}
             {user && <NavLink to="/messages">Messages{unread > 0 && <span className="badge">{unread}</span>}</NavLink>}
             {user ? (
               <><NavLink to="/profil" className="hide-sm">Mon profil</NavLink><UserMenu /></>

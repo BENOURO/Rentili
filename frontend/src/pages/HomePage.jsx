@@ -20,7 +20,7 @@ export default function HomePage() {
             la plateforme tunisienne de location d'objets entre particuliers.</p>
           <div className="row">
             {user ? (
-              <><Link className="btn" to="/profil">Voir mon profil</Link><Link className="btn ghost" to="/membres">Parcourir les membres</Link></>
+              <><Link className="btn" to="/profil">Voir mon profil</Link><Link className="btn ghost" to="/avis">Voir les avis</Link></>
             ) : (
               <><Link className="btn" to="/inscription">Créer un compte</Link><Link className="btn ghost" to="/connexion">Se connecter</Link></>
             )}

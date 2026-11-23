@@ -33,6 +33,7 @@ export default function ProfilePage() {
 
       <div className="row small" style={{ marginTop: 30, gap: 18 }}>
         <Link className="muted" to={`/membres/${user.id}`}>Voir mon profil public</Link>
+        <Link className="muted" to="/avis">Voir mes avis</Link>
         <Link className="muted" to="/profil/supprimer">Supprimer mon compte</Link>
       </div>
     </div>

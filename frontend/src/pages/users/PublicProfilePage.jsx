@@ -36,7 +36,7 @@ export default function PublicProfilePage() {
         {member.bio ? <p className="pre" style={{ margin: 0 }}>{member.bio}</p> : <p className="muted" style={{ margin: 0 }}>{member.first_name} n'a pas encore écrit de présentation.</p>}
       </div>
       {!isMe && <div className="card mb"><ContactButton listingId={1} listingTitle="Annonce de test" ownerId={member.id} /></div>}
-      <p className="small muted">Les annonces et les avis de ce membre s'afficheront ici une fois les modules Annonces et Avis intégrés.</p>
+      <Link className="small muted" to="/avis">Consulter les avis de la communauté</Link>
     </div>
   )
 }

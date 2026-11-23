@@ -25,7 +25,11 @@ export default function RegisterPage() {
       notify('Compte créé. Bienvenue sur RENTILI !')
       navigate('/profil')
     } catch (err) {
-      setErrors(err.fields)
+      if (err.fields && Object.keys(err.fields).length > 0) {
+        setErrors(err.fields)
+      } else {
+        setErrors({ non_field_errors: [err.message || 'Impossible de créer le compte. Vérifiez que le serveur Django est démarré.'] })
+      }
     } finally { setBusy(false) }
   }
 
