@@ -10,6 +10,7 @@ export default function AnnoncesPage() {
   const { user } = useAuth()
   const [params, setParams] = useSearchParams()
   const [data, setData] = useState(null)
+  const [error, setError] = useState('')
   const [categories, setCategories] = useState([])
   const filters = Object.fromEntries(params.entries())
 
@@ -19,7 +20,12 @@ export default function AnnoncesPage() {
 
   useEffect(() => {
     const q = new URLSearchParams(params)
-    api(`/reservations/annonces/?${q}`).then(setData).catch(() => setData({ count: 0, results: [] }))
+    api(`/reservations/annonces/?${q}`)
+      .then((response) => {
+        setData(response)
+        setError('')
+      })
+      .catch((err) => setError(err.message))
   }, [params])
 
   const setFilter = (e) => {
@@ -62,7 +68,8 @@ export default function AnnoncesPage() {
           <Field label="Au" name="date_fin" type="date" value={filters.date_fin || ''} onChange={setFilter} />
         </div>
       </div>
-      {data === null ? <p className="muted">Chargement…</p>
+      {error ? <div className="alert">Impossible de charger les annonces : {error}</div>
+        : data === null ? <p className="muted">Chargement…</p>
         : data.results.length === 0 ? <div className="empty"><h3>Aucun objet pour le moment</h3><p>Lancez <code>python manage.py seed_reservations</code> pour créer des annonces de démonstration.</p></div>
         : (
           <>

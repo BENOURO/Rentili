@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -33,7 +35,7 @@ class AnnonceListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         params = self.request.query_params
         if params.get("mine") == "true" and self.request.user.is_authenticated:
-            qs = Annonce.objects.filter(proprietaire=self.request.user)
+            qs = Annonce.objects.filter(proprietaire=self.request.user, active=True)
         else:
             qs = Annonce.objects.filter(active=True)
         qs = qs.select_related("proprietaire", "categorie").prefetch_related("photos")
@@ -99,12 +101,17 @@ class AnnonceDetailView(generics.RetrieveUpdateDestroyAPIView):
         annonce.refresh_from_db()
         return Response(AnnonceDetailSerializer(annonce, context={"request": request}).data)
 
+    @transaction.atomic
     def destroy(self, request, *args, **kwargs):
+        """Archive the announcement and cancel reservations that have not started."""
         annonce = self.get_object()
         if annonce.proprietaire_id != request.user.pk:
             raise PermissionDenied("Seul le propriétaire peut supprimer cette annonce.")
         annonce.active = False
         annonce.save(update_fields=["active", "date_modification"])
+        annonce.reservations.filter(
+            Q(statut=S.EN_ATTENTE) | Q(statut=S.ACCEPTEE, date_debut__gt=date.today())
+        ).update(statut=S.ANNULEE, annulee_par=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -174,6 +181,8 @@ class AccepterView(ReservationActionView):
             raise PermissionDenied("Seul le propriétaire peut accepter une demande.")
         if r.statut != S.EN_ATTENTE:
             raise ValidationError({"detail": "Cette demande n'est plus en attente."})
+        if not r.annonce.active:
+            raise ValidationError({"detail": "Cette annonce a été retirée."})
         if Reservation.chevauchements(r.annonce, r.date_debut, r.date_fin, exclure=r).exists():
             raise ValidationError({"detail": "L'objet est déjà réservé sur une partie de cette période."})
         r.statut = S.ACCEPTEE

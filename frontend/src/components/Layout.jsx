@@ -49,7 +49,7 @@ function UserMenu() {
           <Link to="/messages">Messages</Link>
           <Link to="/avis">Mes avis</Link>
           <Link to="/profil/modifier">Modifier mon profil</Link>
-          {user.is_staff && <a href="http://127.0.0.1:8000/admin/">Administration</a>}
+          {user.is_staff && <a href="http://127.0.0.1:8001/admin/">Administration</a>}
           <hr />
           <button onClick={onLogout}>Se déconnecter</button>
         </div>
