@@ -69,7 +69,7 @@ export default function Layout() {
           <div className="nav-links">
             <NavLink to="/annonces">Objets</NavLink>
             {user && <NavLink to="/reservations">Réservations</NavLink>}
-            {user && <NavLink to="/membres">Membres</NavLink>}
+            <NavLink to="/membres">Membres</NavLink>
             {user && <NavLink to="/avis">Avis</NavLink>}
             {user && <NavLink to="/messages">Messages{unread > 0 && <span className="badge">{unread}</span>}</NavLink>}
             {user ? (

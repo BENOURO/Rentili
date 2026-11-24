@@ -26,7 +26,6 @@ export default function Thread({ conversationId, me }) {
   const markRead = useCallback(() => api(`${base}/read/`, { method: 'POST' }).catch(() => {}), [base])
 
   useEffect(() => {
-    setConv(null); setMessages(null); setMissing(false); setDraft('')
     Promise.all([api(`${base}/`), api(`${base}/messages/`)])
       .then(([c, m]) => { setConv(c); setMessages(m.results); setHasMore(m.has_more); markRead() })
       .catch(() => setMissing(true))
@@ -88,7 +87,6 @@ export default function Thread({ conversationId, me }) {
   if (missing) return <div className="chat-empty"><div><h3>Conversation introuvable</h3><Link className="btn" to="/messages">Retour aux messages</Link></div></div>
   if (!conv || !messages) return <div className="chat-empty">Chargement…</div>
 
-  let lastDay = ''
   return (
     <>
       <div className="thread-head">
@@ -101,10 +99,9 @@ export default function Thread({ conversationId, me }) {
       </div>
       <div className="thread-body" ref={body}>
         {hasMore && <button className="btn ghost sm older" onClick={loadOlder}>Messages précédents</button>}
-        {messages.map((m) => {
+        {messages.map((m, i) => {
           const day = new Date(m.created_at).toDateString()
-          const sep = day !== lastDay
-          lastDay = day
+          const sep = i === 0 || day !== new Date(messages.at(i - 1).created_at).toDateString()
           return (
             <div key={m.id} style={{ display: 'contents' }}>
               {sep && <span className="day-sep">{dayLabel(m.created_at)}</span>}

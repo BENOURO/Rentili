@@ -297,3 +297,35 @@ def test_suppression_archive_sans_supprimer_reservations(cl_proprio, cl_loc, ann
     assert annonce.active is False
     assert Reservation.objects.filter(pk=resa.pk).exists()
     assert APIClient().get(f"/api/reservations/annonces/{annonce.pk}/").status_code == 404
+
+
+# --- Retrait d'une annonce ------------------------------------------------------------------------
+
+def test_retirer_une_annonce_annule_ses_reservations_a_venir(cl_loc, cl_proprio, annonce, tiers, proprio):
+    en_attente = demander(cl_loc, annonce, J(5), J(7)).data["id"]
+    acceptee = Reservation.objects.create(annonce=annonce, locataire=tiers, date_debut=J(10), date_fin=J(12),
+                                          statut=S.ACCEPTEE, prix_total=45, caution=100)
+    en_cours = Reservation.objects.create(annonce=annonce, locataire=tiers, date_debut=J(-1), date_fin=J(1),
+                                          statut=S.ACCEPTEE, prix_total=45, caution=100)
+    terminee = Reservation.objects.create(annonce=annonce, locataire=tiers, date_debut=J(-9), date_fin=J(-7),
+                                          statut=S.TERMINEE, prix_total=45, caution=100)
+    assert cl_proprio.delete(f"/api/reservations/annonces/{annonce.pk}/").status_code == 204
+    statuts = {r.pk: r.statut for r in Reservation.objects.all()}
+    assert statuts[en_attente] == S.ANNULEE
+    assert statuts[acceptee.pk] == S.ANNULEE
+    assert statuts[en_cours.pk] == S.ACCEPTEE  # déjà commencée : on ne l'annule pas
+    assert statuts[terminee.pk] == S.TERMINEE  # l'historique reste
+    assert Reservation.objects.get(pk=en_attente).annulee_par == proprio
+
+
+def test_impossible_d_accepter_sur_une_annonce_retiree(cl_loc, cl_proprio, annonce):
+    rid = demander(cl_loc, annonce, J(5), J(7)).data["id"]
+    Annonce.objects.filter(pk=annonce.pk).update(active=False)  # retirée sans passer par l'API
+    r = cl_proprio.post(f"/api/reservations/{rid}/accepter/")
+    assert r.status_code == 400 and "retirée" in r.data["detail"]
+
+
+def test_mes_annonces_n_affiche_pas_les_annonces_retirees(cl_proprio, annonce):
+    assert cl_proprio.get("/api/reservations/annonces/?mine=true").data["count"] == 1
+    cl_proprio.delete(f"/api/reservations/annonces/{annonce.pk}/")
+    assert cl_proprio.get("/api/reservations/annonces/?mine=true").data["count"] == 0

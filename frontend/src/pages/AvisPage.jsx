@@ -29,7 +29,8 @@ export default function AvisPage() {
   const [filter, setFilter] = useState('all')
   const [editingId, setEditingId] = useState(null)
   const [error, setError] = useState('')
-  const [eligibleReservations, setEligibleReservations] = useState([])
+  const [eligibleState, setEligibleReservations] = useState([])
+  const eligibleReservations = user ? eligibleState : []
   const [form, setForm] = useState({
     ...emptyForm,
     utilisateur_id: user?.id ?? emptyForm.utilisateur_id,
@@ -48,10 +49,7 @@ export default function AvisPage() {
   }, [listerAvis])
 
   useEffect(() => {
-    if (!user) {
-      setEligibleReservations([])
-      return
-    }
+    if (!user) return
     getEligibleAvis()
       .then((eligible) => {
         setEligibleReservations(eligible)

@@ -117,7 +117,7 @@ class ReservationSerializer(serializers.ModelSerializer):
         est_proprio = r.annonce.proprietaire_id == user.pk
         en_attente = r.statut == Reservation.Statut.EN_ATTENTE
         return {
-            "accepter": est_proprio and en_attente,
+            "accepter": est_proprio and en_attente and r.annonce.active,
             "refuser": est_proprio and en_attente,
             "modifier": r.locataire_id == user.pk and en_attente,
             "annuler": r.peut_annuler(user),

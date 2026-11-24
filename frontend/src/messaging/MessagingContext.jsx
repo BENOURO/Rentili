@@ -23,7 +23,7 @@ export function MessagingProvider({ children }) {
   const subscribe = useCallback((fn) => { listeners.current.add(fn); return () => listeners.current.delete(fn) }, [])
 
   useEffect(() => {
-    if (!userId) { setUnread(0); return }
+    if (!userId) return
     let socket, retry, ping, attempts = 0, stopped = false
     refreshUnread()
 
@@ -54,7 +54,8 @@ export function MessagingProvider({ children }) {
     return () => { stopped = true; clearTimeout(retry); clearInterval(ping); socket?.close() }
   }, [userId, refreshUnread])
 
-  const value = useMemo(() => ({ unread, connected, subscribe, refreshUnread }), [unread, connected, subscribe, refreshUnread])
+  const shownUnread = userId ? unread : 0 // déconnecté : pas de compteur
+  const value = useMemo(() => ({ unread: shownUnread, connected, subscribe, refreshUnread }), [shownUnread, connected, subscribe, refreshUnread])
   return <MessagingContext.Provider value={value}>{children}</MessagingContext.Provider>
 }
 

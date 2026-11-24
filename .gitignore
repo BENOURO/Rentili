@@ -21,3 +21,8 @@ frontend/.env
 # OS
 .DS_Store
 Thumbs.db
+
+# Bases SQLite (toutes) et rapports de couverture
+*.sqlite3
+.coverage
+htmlcov/
